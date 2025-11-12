@@ -1,0 +1,40 @@
+name: Meeting minutes.
+description: The main goal of this issue template is to assist in drafting meeting minutes within this organization.
+title: '[DD/MM/YYYY] Meeting XXXXX'
+labels:
+  - meeting
+projects:
+  - ziguraty/1
+body:
+  - type: textarea
+    id: description
+    validations:
+      required: true
+    attributes:
+      label: Description
+      description: Describe your meeting with as many details as possible.
+      value: |
+        [Meeting recording]().
+
+        ## Agenda
+        - Estimated time: in minutes
+        - Topic 1
+        - Topic 2
+
+        ## Participants
+        - Participant 1
+        - Participant 2
+        - @...
+        - @...
+
+        ## Topics discussed
+        - Topic 1
+        - Topic 2
+
+        ## Decisions
+        - Decision 1
+        - Decision 2
+
+        ## Ideas / Actions
+        - [ ] Task 1
+        - [ ] Task 2

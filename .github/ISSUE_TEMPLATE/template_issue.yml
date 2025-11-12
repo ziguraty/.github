@@ -1,0 +1,29 @@
+name: Ziguraty's Issue template.
+description: The main goal of this template is to standardize Issue creation for this organization.
+projects:
+  - ziguraty/1
+body:
+  - type: markdown
+    attributes:
+      value: |
+        When opening this Issue, don’t forget to:
+        - Describe the Issue with as many details as possible. Think that in the future you should be able to understand easily what is being proposed today.
+        - Enrich your Issue’s metadata as much as possible:
+          - Select Labels whenever necessary.
+          - This template automatically creates the Issue with the status *Backlog* in the [Board planner](https://github.com/orgs/ziguraty/projects/1). Reflect on that and, if necessary, update this information.
+          - Configure all relevant fields in the [Board planner](https://github.com/orgs/ziguraty/projects/1).
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        Describe your Issue with as many details as possible.
+        Also list, if any, all activities and/or fixes required before closing the Issue.
+      value: |
+
+
+        ### List of activities and/or fixes
+
+        - [ ] Activity/Fix 1
+        - [ ] Activity/Fix 2
+        - [ ] Activity/Fix 3
