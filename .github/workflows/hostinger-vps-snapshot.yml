@@ -1,0 +1,104 @@
+name: Hostinger VPS Snapshot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 5 * * *"
+      timezone: America/Sao_Paulo
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+concurrency:
+  group: hostinger-vps-snapshot
+  cancel-in-progress: false
+
+jobs:
+  create-snapshot:
+    name: Create snapshot
+    runs-on: ubuntu-latest
+    env:
+      HOSTINGER_API_BASE_URL: ${{ secrets.HOSTINGER_API_BASE_URL || 'https://developers.hostinger.com' }}
+      HOSTINGER_API_TOKEN: ${{ secrets.HOSTINGER_API_TOKEN }}
+      HOSTINGER_VPS_ID: ${{ secrets.HOSTINGER_VPS_ID }}
+    steps:
+      - name: Get job ID
+        id: job_id
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          JOB_ID=$(gh api \
+            /repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs \
+            --jq '.jobs[0].id')
+          echo "job_id=$JOB_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${HOSTINGER_API_TOKEN:-}" ]; then
+            echo "Missing GitHub secret: HOSTINGER_API_TOKEN" >&2
+            exit 1
+          fi
+
+          if [ -z "${HOSTINGER_VPS_ID:-}" ]; then
+            echo "Missing GitHub secret: HOSTINGER_VPS_ID" >&2
+            exit 1
+          fi
+
+      - name: Create daily snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          api_url="${HOSTINGER_API_BASE_URL}/api/vps/v1/virtual-machines/${HOSTINGER_VPS_ID}/snapshot"
+          response_file="$(mktemp)"
+
+          http_code="$(
+            curl --silent --show-error \
+              --output "${response_file}" \
+              --write-out "%{http_code}" \
+              --request POST \
+              --url "${api_url}" \
+              --header "Authorization: Bearer ${HOSTINGER_API_TOKEN}" \
+              --header "Content-Type: application/json" \
+              --data '{}'
+          )"
+
+          echo "Hostinger snapshot response code: ${http_code}"
+
+          if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 300 ]; then
+            echo "Snapshot request failed." >&2
+            cat "${response_file}" >&2
+            exit 1
+          fi
+
+          if jq empty "${response_file}" >/dev/null 2>&1; then
+            jq . "${response_file}"
+          else
+            cat "${response_file}"
+          fi
+
+      - name: Workflow failure notification
+        if: failure()
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          JOB_ID: ${{ steps.job_id.outputs.job_id }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+        with:
+          filename: .github/failure.md
+
+      - name: Note snapshot behavior
+        shell: bash
+        run: |
+          echo "Hostinger snapshots are a single-slot snapshot per VPS."
+          echo "Creating a new snapshot overwrites the previous one for this VM."
